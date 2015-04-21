@@ -1,0 +1,17 @@
+[package]
+name = "omni"
+version = "0.0.1"
+authors = ["= <amiller4421@gmail.com>"]
+
+[[example]]
+name="test"
+path="examples/test.rs"
+
+[[example]]
+name="test2"
+path="examples/test2.rs"
+
+[dependencies]
+hyper = "*"
+time = "*"
+url = "*"

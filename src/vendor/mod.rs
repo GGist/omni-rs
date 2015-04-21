@@ -1,0 +1,1 @@
+//! Implements the UPnP vendor layer of the UPnP standard.
