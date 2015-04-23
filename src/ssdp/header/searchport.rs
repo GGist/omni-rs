@@ -13,13 +13,13 @@ pub const SEARCHPORT_MAX_VALUE: u16 = 65535;
 /// If a SearchPort header is not included in a message then the device must
 /// respond to unicast search requests on the standard port of 1900.
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct SEARCHPORT(u16);
+pub struct SearchPort(pub u16);
 
-unsafe impl Sync for SEARCHPORT { }
+unsafe impl Sync for SearchPort { }
 
-unsafe impl Send for SEARCHPORT { }
+unsafe impl Send for SearchPort { }
 
-impl Header for SEARCHPORT {
+impl Header for SearchPort {
     fn header_name() -> &'static str {
         SEARCHPORT_HEADER_NAME
     }
@@ -37,14 +37,14 @@ impl Header for SEARCHPORT {
         };
         
         if value <= SEARCHPORT_MAX_VALUE && value >= SEARCHPORT_MIN_VALUE {
-            Some(SEARCHPORT(value))
+            Some(SearchPort(value))
         } else {
             None
         }
     }
 }
 
-impl HeaderFormat for SEARCHPORT {
+impl HeaderFormat for SearchPort {
     fn fmt_header(&self, fmt: &mut Formatter) -> Result {
         try!(fmt.write_fmt(format_args!("{}", self.0)));
         
@@ -56,27 +56,27 @@ impl HeaderFormat for SEARCHPORT {
 mod tests {
     use hyper::header::{Header};
     
-    use super::{SEARCHPORT};
+    use super::{SearchPort};
     
     #[test]
     fn positive_searchport() {
         let searchport_header_value = &[b"50000"[..].to_vec()];
         
-        SEARCHPORT::parse_header(searchport_header_value).unwrap();
+        SearchPort::parse_header(searchport_header_value).unwrap();
     }
     
     #[test]
     fn positive_lower_bound() {
         let searchport_header_value = &[b"49152"[..].to_vec()];
         
-        SEARCHPORT::parse_header(searchport_header_value).unwrap();
+        SearchPort::parse_header(searchport_header_value).unwrap();
     }
     
     #[test]
     fn positive_upper_bound() {
         let searchport_header_value = &[b"65535"[..].to_vec()];
         
-        SEARCHPORT::parse_header(searchport_header_value).unwrap();
+        SearchPort::parse_header(searchport_header_value).unwrap();
     }
     
     #[test]
@@ -84,6 +84,6 @@ mod tests {
     fn negative_reserved() {
         let searchport_header_value = &[b"49151"[..].to_vec()];
         
-        SEARCHPORT::parse_header(searchport_header_value).unwrap();
+        SearchPort::parse_header(searchport_header_value).unwrap();
     }
 }

@@ -71,6 +71,28 @@ impl DeviceType {
             _ => panic!("VendorDeviceType Unimplemented")//DeviceType::Vendor(VendorDeviceType::new(schema, type, version))
         }
     }
+    
+    pub fn version(&self) -> Version {
+        match *self {
+            DeviceType::BasicDevice(n)      => n,
+            DeviceType::MediaServer(n)      => n,
+            DeviceType::MediaRenderer(n)    => n,
+            DeviceType::ManagedDevice(n)    => n,
+            DeviceType::SolarBlind(n)       => n,
+            DeviceType::SecurityCamera(n)   => n,
+            DeviceType::HVACSystem(n)       => n,
+            DeviceType::BinaryLight(n)      => n,
+            DeviceType::DimmableLight(n)    => n,
+            DeviceType::InternetGateway(n)  => n,
+            DeviceType::WirelessAP(n)       => n,
+            DeviceType::Printer(n)          => n,
+            DeviceType::Scanner(n)          => n,
+            DeviceType::SensorManager(n)    => n,
+            DeviceType::TelephonyClient(n)  => n,
+            DeviceType::TelephonyServer(n)  => n,
+            DeviceType::Unimplemented(_, n) => n
+        }
+    }
 }
 
 /// Match the type to a vendor name.

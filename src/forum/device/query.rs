@@ -16,7 +16,8 @@ use forum::device::telephony_client::{TelephonyClientQuery};
 use forum::device::telephony_server::{TelephonyServerQuery};
 use forum::device::wireless_ap::{WirelessAPQuery};
 use forum::device::{DeviceType};
-use forum::query::{GenericQuery};
+use forum::query::{GenericQuery, TypedQuery};
+use version::{Version};
 
 /// Enumerates all device types as well as their corresponding query objects.
 ///
@@ -68,7 +69,49 @@ impl DeviceQuery {
     }
     
     pub fn uuid(&self) -> &[u8] {
-        &b"Unimplemented"[..]
+        match *self {
+            DeviceQuery::BasicDevice(ref n)     => n.uuid(),
+            DeviceQuery::MediaServer(ref n)     => n.uuid(),
+            DeviceQuery::MediaRenderer(ref n)   => n.uuid(),
+            DeviceQuery::ManagedDevice(ref n)   => n.uuid(),
+            DeviceQuery::SolarBlind(ref n)      => n.uuid(),
+            DeviceQuery::SecurityCamera(ref n)  => n.uuid(),
+            DeviceQuery::HVACSystem(ref n)      => n.uuid(),
+            DeviceQuery::BinaryLight(ref n)     => n.uuid(),
+            DeviceQuery::DimmableLight(ref n)   => n.uuid(),
+            DeviceQuery::InternetGateway(ref n) => n.uuid(),
+            DeviceQuery::WirelessAP(ref n)      => n.uuid(),
+            DeviceQuery::Printer(ref n)         => n.uuid(),
+            DeviceQuery::Scanner(ref n)         => n.uuid(),
+            DeviceQuery::SensorManager(ref n)   => n.uuid(),
+            DeviceQuery::TelephonyClient(ref n) => n.uuid(),
+            DeviceQuery::TelephonyServer(ref n) => n.uuid(),
+            DeviceQuery::Unimplemented(ref n)   => n.uuid()
+        }
+    }
+}
+
+impl TypedQuery for DeviceQuery {
+    fn version(&self) -> Version {
+        match *self {
+            DeviceQuery::BasicDevice(ref n)     => n.version(),
+            DeviceQuery::MediaServer(ref n)     => n.version(),
+            DeviceQuery::MediaRenderer(ref n)   => n.version(),
+            DeviceQuery::ManagedDevice(ref n)   => n.version(),
+            DeviceQuery::SolarBlind(ref n)      => n.version(),
+            DeviceQuery::SecurityCamera(ref n)  => n.version(),
+            DeviceQuery::HVACSystem(ref n)      => n.version(),
+            DeviceQuery::BinaryLight(ref n)     => n.version(),
+            DeviceQuery::DimmableLight(ref n)   => n.version(),
+            DeviceQuery::InternetGateway(ref n) => n.version(),
+            DeviceQuery::WirelessAP(ref n)      => n.version(),
+            DeviceQuery::Printer(ref n)         => n.version(),
+            DeviceQuery::Scanner(ref n)         => n.version(),
+            DeviceQuery::SensorManager(ref n)   => n.version(),
+            DeviceQuery::TelephonyClient(ref n) => n.version(),
+            DeviceQuery::TelephonyServer(ref n) => n.version(),
+            DeviceQuery::Unimplemented(ref n)   => n.version()
+        }
     }
 }
 

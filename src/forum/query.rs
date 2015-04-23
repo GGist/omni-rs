@@ -33,9 +33,8 @@ impl GenericQuery {
     }*/
 }
 
-/// Exposes query objects that can be used to resolve what type of entity is
-/// being advertised as well as query the entity to retrieve information
-/// necessary to interact with it.
+/// Represents typed and untyped query objects.
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub enum QueryType {
     Root(GenericQuery),
     UUID(GenericQuery),

@@ -7,13 +7,13 @@ const BOOTID_HEADER_NAME: &'static str = "BOOTID.UPNP.ORG";
 /// Represents a UPnP BootID header which is used to denote the boot instance
 /// of a root device.
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct BOOTID(u32);
+pub struct BootID(pub u32);
 
-unsafe impl Sync for BOOTID { }
+unsafe impl Sync for BootID { }
 
-unsafe impl Send for BOOTID { }
+unsafe impl Send for BootID { }
 
-impl Header for BOOTID {
+impl Header for BootID {
     fn header_name() -> &'static str {
         BOOTID_HEADER_NAME
     }
@@ -35,12 +35,12 @@ impl Header for BOOTID {
         if value.is_negative() {
             None
         } else {
-            Some(BOOTID(value as u32))
+            Some(BootID(value as u32))
         }
     }
 }
 
-impl HeaderFormat for BOOTID {
+impl HeaderFormat for BootID {
     fn fmt_header(&self, fmt: &mut Formatter) -> Result {
         try!(fmt.write_fmt(format_args!("{}", self.0)));
         
@@ -52,41 +52,41 @@ impl HeaderFormat for BOOTID {
 mod tests {
     use hyper::header::{Header};
     
-    use super::{BOOTID};
+    use super::{BootID};
     
     #[test]
     fn positive_bootid() {
         let bootid_header_value = &[b"1216907400"[..].to_vec()];
         
-        BOOTID::parse_header(bootid_header_value).unwrap();
+        BootID::parse_header(bootid_header_value).unwrap();
     }
     
     #[test]
     fn positive_leading_zeros() {
         let bootid_header_value = &[b"0000001216907400"[..].to_vec()];
         
-        BOOTID::parse_header(bootid_header_value).unwrap();
+        BootID::parse_header(bootid_header_value).unwrap();
     }
     
     #[test]
     fn positive_lower_bound() {
         let bootid_header_value = &[b"0"[..].to_vec()];
         
-        BOOTID::parse_header(bootid_header_value).unwrap();
+        BootID::parse_header(bootid_header_value).unwrap();
     }
     
     #[test]
     fn positive_upper_bound() {
         let bootid_header_value = &[b"2147483647"[..].to_vec()];
         
-        BOOTID::parse_header(bootid_header_value).unwrap();
+        BootID::parse_header(bootid_header_value).unwrap();
     }
        
     #[test]
     fn positive_negative_zero() {
         let bootid_header_value = &[b"-0"[..].to_vec()];
         
-        BOOTID::parse_header(bootid_header_value).unwrap();
+        BootID::parse_header(bootid_header_value).unwrap();
     }
     
     #[test]
@@ -94,7 +94,7 @@ mod tests {
     fn negative_overflow() {
         let bootid_header_value = &[b"2290649224"[..].to_vec()];
         
-        BOOTID::parse_header(bootid_header_value).unwrap();
+        BootID::parse_header(bootid_header_value).unwrap();
     }
     
     #[test]
@@ -102,7 +102,7 @@ mod tests {
     fn negative_negative_overflow() {
         let bootid_header_value = &[b"-2290649224"[..].to_vec()];
         
-        BOOTID::parse_header(bootid_header_value).unwrap();
+        BootID::parse_header(bootid_header_value).unwrap();
     }
     
     #[test]
@@ -110,6 +110,6 @@ mod tests {
     fn negative_nan() {
         let bootid_header_value = &[b"2290wow649224"[..].to_vec()];
         
-        BOOTID::parse_header(bootid_header_value).unwrap();
+        BootID::parse_header(bootid_header_value).unwrap();
     }
 }

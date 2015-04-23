@@ -4,16 +4,16 @@ use hyper::header::{HeaderFormat, Header};
 
 const CONFIGID_HEADER_NAME: &'static str = "CONFIGID.UPNP.ORG";
 
-/// Represents a UPnP ConfigId header which is used to denote the configuration
+/// Represents a UPnP ConfigID header which is used to denote the configuration
 /// of a root device and it's embedded devices and services.
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct CONFIGID(u32);
+pub struct ConfigID(pub u32);
 
-unsafe impl Sync for CONFIGID { }
+unsafe impl Sync for ConfigID { }
 
-unsafe impl Send for CONFIGID { }
+unsafe impl Send for ConfigID { }
 
-impl Header for CONFIGID {
+impl Header for ConfigID {
     fn header_name() -> &'static str {
         CONFIGID_HEADER_NAME
     }
@@ -40,12 +40,12 @@ impl Header for CONFIGID {
         if value.is_negative() {
             None
         } else {
-            Some(CONFIGID(value as u32))
+            Some(ConfigID(value as u32))
         }
     }
 }
 
-impl HeaderFormat for CONFIGID {
+impl HeaderFormat for ConfigID {
     fn fmt_header(&self, fmt: &mut Formatter) -> Result {
         try!(fmt.write_fmt(format_args!("{}", self.0)));
         
@@ -57,41 +57,41 @@ impl HeaderFormat for CONFIGID {
 mod tests {
     use hyper::header::{Header};
     
-    use super::{CONFIGID};
+    use super::{ConfigID};
     
     #[test]
     fn positive_configid() {
         let configid_header_value = &[b"1777215"[..].to_vec()];
         
-        CONFIGID::parse_header(configid_header_value).unwrap();
+        ConfigID::parse_header(configid_header_value).unwrap();
     }
     
     #[test]
     fn positive_reserved() {
         let configid_header_value = &[b"20720000"[..].to_vec()];
         
-        CONFIGID::parse_header(configid_header_value).unwrap();
+        ConfigID::parse_header(configid_header_value).unwrap();
     }
     
     #[test]
     fn positive_lower_bound() {
         let configid_header_value = &[b"0"[..].to_vec()];
         
-        CONFIGID::parse_header(configid_header_value).unwrap();
+        ConfigID::parse_header(configid_header_value).unwrap();
     }
     
     #[test]
     fn positive_upper_bound() {
         let configid_header_value = &[b"2147483647"[..].to_vec()];
         
-        CONFIGID::parse_header(configid_header_value).unwrap();
+        ConfigID::parse_header(configid_header_value).unwrap();
     }
     
     #[test]
     fn positive_negative_zero() {
         let configid_header_value = &[b"-0"[..].to_vec()];
         
-        CONFIGID::parse_header(configid_header_value).unwrap();
+        ConfigID::parse_header(configid_header_value).unwrap();
     }
     
     #[test]
@@ -99,7 +99,7 @@ mod tests {
     fn negative_overflow() {
         let configid_header_value = &[b"2290649224"[..].to_vec()];
         
-        CONFIGID::parse_header(configid_header_value).unwrap();
+        ConfigID::parse_header(configid_header_value).unwrap();
     }
     
     #[test]
@@ -107,7 +107,7 @@ mod tests {
     fn negative_negative_overflow() {
         let configid_header_value = &[b"-2290649224"[..].to_vec()];
         
-        CONFIGID::parse_header(configid_header_value).unwrap();
+        ConfigID::parse_header(configid_header_value).unwrap();
     }
     
     #[test]
@@ -115,6 +115,6 @@ mod tests {
     fn negative_nan() {
         let configid_header_value = &[b"2290wow649224"[..].to_vec()];
         
-        CONFIGID::parse_header(configid_header_value).unwrap();
+        ConfigID::parse_header(configid_header_value).unwrap();
     }
 }

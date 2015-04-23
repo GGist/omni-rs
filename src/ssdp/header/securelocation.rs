@@ -10,13 +10,13 @@ const SECURELOCATION_HEADER_NAME: &'static str = "SECURELOCATION.UPNP.ORG";
 ///
 /// Can be used instead of the Location header field.
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub struct SECURELOCATION(String);
+pub struct SecureLocation(pub String);
 
-unsafe impl Sync for SECURELOCATION { }
+unsafe impl Sync for SecureLocation { }
 
-unsafe impl Send for SECURELOCATION { }
+unsafe impl Send for SecureLocation { }
 
-impl Header for SECURELOCATION {
+impl Header for SecureLocation {
     fn header_name() -> &'static str {
         SECURELOCATION_HEADER_NAME
     }
@@ -29,13 +29,13 @@ impl Header for SECURELOCATION {
         let owned_bytes = raw[0].clone();
         
         match String::from_utf8(owned_bytes) {
-            Ok(n)  => Some(SECURELOCATION(n)),
+            Ok(n)  => Some(SecureLocation(n)),
             Err(_) => None
         }
     }
 }
 
-impl HeaderFormat for SECURELOCATION {
+impl HeaderFormat for SecureLocation {
     fn fmt_header(&self, fmt: &mut Formatter) -> Result {
         try!(fmt.write_str(&self.0));
         
@@ -47,20 +47,20 @@ impl HeaderFormat for SECURELOCATION {
 mod tests {
     use hyper::header::{Header};
     
-    use super::{SECURELOCATION};
+    use super::{SecureLocation};
     
     #[test]
     fn positive_securelocation() {
         let securelocation_header_value = &[b"https://192.168.1.1/"[..].to_vec()];
         
-        SECURELOCATION::parse_header(securelocation_header_value).unwrap();
+        SecureLocation::parse_header(securelocation_header_value).unwrap();
     }
     
     #[test]
     fn positive_invalid_url() {
         let securelocation_header_value = &[b"just some text"[..].to_vec()];
         
-        SECURELOCATION::parse_header(securelocation_header_value).unwrap();
+        SecureLocation::parse_header(securelocation_header_value).unwrap();
     }
     
     #[test]
@@ -68,7 +68,7 @@ mod tests {
     fn negative_empty() {
         let securelocation_header_value = &[b""[..].to_vec()];
         
-        SECURELOCATION::parse_header(securelocation_header_value).unwrap();
+        SecureLocation::parse_header(securelocation_header_value).unwrap();
     }
     
     #[test]
@@ -76,6 +76,6 @@ mod tests {
     fn negative_invalid_utf8() {
         let securelocation_header_value = &[b"https://192.168.1.1/\x80"[..].to_vec()];
         
-        SECURELOCATION::parse_header(securelocation_header_value).unwrap();
+        SecureLocation::parse_header(securelocation_header_value).unwrap();
     }
 }

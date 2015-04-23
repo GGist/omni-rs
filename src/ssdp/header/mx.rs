@@ -22,7 +22,7 @@ pub const MX_HEADER_MAX: u8 = 120;
 /// (but lower than the maximum threshold) because of resources it may not want
 /// to tie up.
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct MX(u8);
+pub struct MX(pub u8);
 
 impl MX {
     pub fn new(wait_bound: u8) -> SSDPResult<MX> {

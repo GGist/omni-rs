@@ -15,13 +15,23 @@ mod securelocation;
 mod st;
 mod usn;
 
-pub use self::bootid::BOOTID;
-pub use self::configid::CONFIGID;
-pub use self::man::MAN;
+pub use self::bootid::BootID;
+pub use self::configid::ConfigID;
+pub use self::man::Man;
 pub use self::mx::MX;
 pub use self::nt::NT;
 pub use self::nts::NTS;
-pub use self::searchport::SEARCHPORT;
-pub use self::securelocation::SECURELOCATION;
+pub use self::searchport::SearchPort;
+pub use self::securelocation::SecureLocation;
 pub use self::st::ST;
 pub use self::usn::USN;
+
+// TODO: Use trait Headers instead of hyper::header::Headers directly
+// Provide implementation for hyper Headers as well as mock implementations
+// for hashmaps with cfg(test) set in the impl
+/*
+pub trait Headers {
+    fn set<H: Header + HeaderFormat>(&mut self, value: H);
+    
+    
+}*/

@@ -1,3 +1,9 @@
+
+mod alive;
+
+pub use self::alive::{AliveMessage, AliveVersion, AliveExtV11, AliveExtV20};
+
+/*
 /// A notify message that was sent by some device on the network.
 pub enum NotifyMessage {
     /// Device recently joined or is renewing its status on the network.
@@ -53,4 +59,4 @@ NT: upnp:rootdevice
 NTS: ssdp:alive
 USN: uuid:de305d54-75b4-431b-adb2-eb6b9e546013::upnp:rootdevice
 BOOTID.UPNP.ORG: 89
-CONFIGID.UPNP.ORG: 8
+CONFIGID.UPNP.ORG: 8*/

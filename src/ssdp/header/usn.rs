@@ -13,7 +13,7 @@ const FIELD_PAIR_SEPARATOR: &'static str = "::";
 ///
 /// Field value can hold up to two FieldPairs.
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub struct USN(FieldPair, Option<FieldPair>);
+pub struct USN(pub FieldPair, pub Option<FieldPair>);
 
 impl USN {
     pub fn new(field: FieldPair, opt_field: Option<FieldPair>) -> USN {

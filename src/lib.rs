@@ -5,6 +5,7 @@ use std::fmt::{self, Display, Formatter};
 
 extern crate hyper;
 extern crate libc;
+extern crate time;
 extern crate url;
 
 pub mod forum;

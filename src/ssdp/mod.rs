@@ -7,6 +7,7 @@ use std::fmt::{Display, Error, Formatter};
 use std::result::{Result};
 
 pub mod header;
+pub mod message;
 
 /// Separator character for a FieldPair and it's value.
 const PAIR_SEPARATOR: u8 = b':';

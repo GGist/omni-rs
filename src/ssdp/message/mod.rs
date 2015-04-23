@@ -1,8 +1,14 @@
 use hyper::http::{self};
-
+/*
 use {SSDPError};
 use super::notify::{NotifyMessage};
-use super::search::{SearchRequest, SearchResponse};
+use super::search::{SearchRequest, SearchResponse};*/
+
+pub mod notify;
+
+const UPNP_10_VERSION_NAME: &'static str = "UPnP/1.0";
+const UPNP_11_VERSION_NAME: &'static str = "UPnP/1.1";
+const UPNP_20_VERSION_NAME: &'static str = "UPnP/2.0";
 
 const VALID_SEARCH_RESPONSE_CODE: u16 = 200;
 
@@ -13,9 +19,9 @@ const SEARCH_HEADER: &'static str = "M-SEARCH";
 pub trait MessageExt {
     /// Checks to see if the header has a field-name that matches the given
     /// name and returns all field-values that match that name or none.
-    pub fn check_header(&self, name: &str) -> Option<&[Vec<u8>]>;
+    fn check_header(&self, name: &str) -> Option<&[Vec<u8>]>;
 }
-
+/*
 /// Enumerates the types of SSDP messages.
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub enum SSDPMessage {
@@ -70,4 +76,4 @@ fn ssdp_from_response(req: Incoming<RawStatus>) -> SSDPResult<SSDPMessage> {
     }
 }
 
-fn 
+*/

@@ -18,7 +18,7 @@ mod query;
 pub mod device;
 pub mod service;
 
-pub use forum::query::GenericQuery;
+pub use forum::query::{GenericQuery, QueryType, TypedQuery};
 
 const URN_TARGET_SEPARATOR: char = ':';
 
@@ -41,7 +41,7 @@ pub enum TargetType {
 
 impl TargetType {
     /// Create a new target type from the given target value.
-    fn new(target: &FieldPair) -> SimpleResult<TargetType> {
+    pub fn new(target: &FieldPair) -> SimpleResult<TargetType> {
         match *target {
             FieldPair::UPnP(ref n) => validate_upnp(&n[..]),
             FieldPair::UUID(ref n) => validate_uuid(&n[..]),

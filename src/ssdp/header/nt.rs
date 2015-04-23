@@ -10,7 +10,7 @@ const NT_HEADER_NAME: &'static str = "NT";
 ///
 /// Any double colons will not be processed as separate FieldPairs.
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub struct NT(FieldPair);
+pub struct NT(pub FieldPair);
 
 impl NT {
     pub fn new(field: FieldPair) -> NT {
