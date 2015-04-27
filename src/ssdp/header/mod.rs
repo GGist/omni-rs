@@ -4,6 +4,10 @@
 //! layer in order to provide a cleaner interface for extending the underlying
 //! HTTP parsing library.
 
+use std::collections::{HashMap};
+
+use hyper::header::{Headers, Header, HeaderFormat};
+
 mod bootid;
 mod configid;
 mod man;
@@ -26,12 +30,65 @@ pub use self::securelocation::SecureLocation;
 pub use self::st::ST;
 pub use self::usn::USN;
 
-// TODO: Use trait Headers instead of hyper::header::Headers directly
-// Provide implementation for hyper Headers as well as mock implementations
-// for hashmaps with cfg(test) set in the impl
-/*
-pub trait Headers {
+/// Interface for objects that allow getting and setting of header values.
+pub trait HeaderMap {
+    /// Set a header field to the given value.
     fn set<H: Header + HeaderFormat>(&mut self, value: H);
     
+    /// Get a reference to a header field if it exists.
+    fn get<H: Header + HeaderFormat>(&self) -> Option<&H>;
     
+    /// Get a mutable reference to a header field if it exists.
+    fn get_mut<H: Header + HeaderFormat>(&mut self) -> Option<&mut H>;
+    
+    /// Returns true if a header field has been set, false otherwise.
+    fn has<H: Header + HeaderFormat>(&self) -> bool;
+    
+    /// Remove a header field and returns true, false otherwise.
+    fn remove<H: Header + HeaderFormat>(&mut self) -> bool;
+}
+
+impl HeaderMap for Headers {
+    fn set<H: Header + HeaderFormat>(&mut self, value: H) {
+        self.set(value)
+    }
+    
+    fn get<H: Header + HeaderFormat>(&self) -> Option<&H> {
+        self.get::<H>()
+    }
+    
+    fn get_mut<H: Header + HeaderFormat>(&mut self) -> Option<&mut H> {
+        self.get_mut::<H>()
+    }
+    
+    fn has<H: Header + HeaderFormat>(&self) -> bool {
+        self.has::<H>()
+    }
+    
+    fn remove<H: Header + HeaderFormat>(&mut self) -> bool {
+        self.remove::<H>()
+    }
+}
+/*
+#[cfg(test)]
+impl<V> HeaderMap for HashMap<&'static str, V> where V: Header + HeaderFormat {
+    fn set<H: Header + HeaderFormat>(&mut self, value: H) {
+        
+    }
+    
+    fn get<H: Header + HeaderFormat>(&self) -> Option<&H> {
+        self.get::<H>()
+    }
+    
+    fn get_mut<H: Header + HeaderFormat>(&mut self) -> Option<&mut H> {
+        self.get_mut::<H>()
+    }
+    
+    fn has<H: Header + HeaderFormat>(&self) -> bool {
+        self.has::<H>()
+    }
+    
+    fn remove<H: Header + HeaderFormat>(&mut self) -> bool {
+        self.remove::<H>()
+    }
 }*/
