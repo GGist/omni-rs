@@ -4,7 +4,7 @@ use {SSDPError};
 use super::notify::{NotifyMessage};
 use super::search::{SearchRequest, SearchResponse};*/
 
-pub mod notify;
+//pub mod notify;
 
 const UPNP_10_VERSION_NAME: &'static str = "UPnP/1.0";
 const UPNP_11_VERSION_NAME: &'static str = "UPnP/1.1";

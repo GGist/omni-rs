@@ -4,8 +4,6 @@
 //! layer in order to provide a cleaner interface for extending the underlying
 //! HTTP parsing library.
 
-use std::collections::{HashMap};
-
 use hyper::header::{Headers, Header, HeaderFormat};
 
 mod bootid;
@@ -30,65 +28,70 @@ pub use self::securelocation::SecureLocation;
 pub use self::st::ST;
 pub use self::usn::USN;
 
-/// Interface for objects that allow getting and setting of header values.
-pub trait HeaderMap {
-    /// Set a header field to the given value.
-    fn set<H: Header + HeaderFormat>(&mut self, value: H);
+/// Trait for viewing the contents of a header structure.
+pub trait HeaderView {
+    /// View a reference to a header field if it exists.
+    fn view<H>(&self) -> Option<&H> where H: Header + HeaderFormat;
     
-    /// Get a reference to a header field if it exists.
-    fn get<H: Header + HeaderFormat>(&self) -> Option<&H>;
-    
-    /// Get a mutable reference to a header field if it exists.
-    fn get_mut<H: Header + HeaderFormat>(&mut self) -> Option<&mut H>;
-    
-    /// Returns true if a header field has been set, false otherwise.
-    fn has<H: Header + HeaderFormat>(&self) -> bool;
-    
-    /// Remove a header field and returns true, false otherwise.
-    fn remove<H: Header + HeaderFormat>(&mut self) -> bool;
+    /// View a reference to the raw bytes of a header field if it exists.
+    fn view_raw(&self, name: &str) -> Option<&[Vec<u8>]>;
 }
 
-impl HeaderMap for Headers {
-    fn set<H: Header + HeaderFormat>(&mut self, value: H) {
-        self.set(value)
-    }
-    
-    fn get<H: Header + HeaderFormat>(&self) -> Option<&H> {
+
+impl HeaderView for Headers {
+    fn view<H>(&self) -> Option<&H> where H: Header + HeaderFormat {
         self.get::<H>()
     }
     
-    fn get_mut<H: Header + HeaderFormat>(&mut self) -> Option<&mut H> {
-        self.get_mut::<H>()
-    }
-    
-    fn has<H: Header + HeaderFormat>(&self) -> bool {
-        self.has::<H>()
-    }
-    
-    fn remove<H: Header + HeaderFormat>(&mut self) -> bool {
-        self.remove::<H>()
+    fn view_raw(&self, name: &str) -> Option<&[Vec<u8>]> {
+        self.get_raw(name)
     }
 }
-/*
+
 #[cfg(test)]
-impl<V> HeaderMap for HashMap<&'static str, V> where V: Header + HeaderFormat {
-    fn set<H: Header + HeaderFormat>(&mut self, value: H) {
+mod mock {
+    use std::any::{Any};
+    use std::borrow::{ToOwned};
+    use std::collections::{HashMap};
+    
+    use hyper::header::{Header, HeaderFormat};
+    
+    use ssdp::header::{HeaderView};
+
+    struct MockHeaderMap {
+        map: HashMap<&'static str, (Box<Any>, [Vec<u8>; 1])>
+    }
+    
+    impl MockHeaderMap {
+        pub fn new() -> MockHeaderMap {
+            MockHeaderMap{ map: HashMap::new() }
+        }
         
+        pub fn insert<H>(&mut self, value: &str) where H: Header + HeaderFormat {
+            let header_bytes = [value.to_owned().into_bytes()];
+            
+            let header = match H::parse_header(&header_bytes[..]) {
+                Some(n) => n,
+                None    => panic!("Failed To Parse value As Header!!!")
+            };
+            
+            self.map.insert(H::header_name(), (Box::new(header), header_bytes));
+        }
     }
     
-    fn get<H: Header + HeaderFormat>(&self) -> Option<&H> {
-        self.get::<H>()
+    impl HeaderView for MockHeaderMap {
+        fn view<H>(&self) -> Option<&H> where H: Header + HeaderFormat {
+            match self.map.get(H::header_name()) {
+                Some(&(ref header, _)) => header.downcast_ref::<H>(),
+                None => None
+            }
+        }
+        
+        fn view_raw(&self, name: &str) -> Option<&[Vec<u8>]> {
+            match self.map.get(name) {
+                Some(&(_, ref header_bytes)) => Some(header_bytes),
+                None => None
+            }
+        }
     }
-    
-    fn get_mut<H: Header + HeaderFormat>(&mut self) -> Option<&mut H> {
-        self.get_mut::<H>()
-    }
-    
-    fn has<H: Header + HeaderFormat>(&self) -> bool {
-        self.has::<H>()
-    }
-    
-    fn remove<H: Header + HeaderFormat>(&mut self) -> bool {
-        self.remove::<H>()
-    }
-}*/
+}

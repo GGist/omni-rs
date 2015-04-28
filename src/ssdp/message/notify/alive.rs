@@ -1,7 +1,7 @@
 use std::error::{Error};
 use std::fmt::{self, Debug, Display, Formatter};
 
-use hyper::header::{Headers, Location, Server, CacheDirective, CacheControl, Header};
+use hyper::header::{Location, Server, CacheDirective, CacheControl, Header};
 use time::{Duration, PreciseTime};
 use url::{Url};
 
@@ -10,7 +10,7 @@ use forum::{GenericQuery, QueryType, TargetType};
 use forum::device::{DeviceQuery};
 //use forum::service::{ServiceQuery};
 use ssdp::{FieldPair};
-use ssdp::header::{SearchPort, SecureLocation, BootID, NT, USN, ConfigID};
+use ssdp::header::{HeaderMap, SearchPort, SecureLocation, BootID, NT, USN, ConfigID};
 use ssdp::message::{self, MessageExt};
 
 /// Represents AliveMessage versions pertaining to different UPnP versions.
@@ -27,7 +27,7 @@ pub enum AliveVersion<'a> {
 /// Represents an announcement made by some UPnP enabled device.
 #[derive(Clone)]
 pub struct AliveMessage {
-    headers: Headers,
+    headers: Box<HeaderMap>,
     created: PreciseTime,
     version: AliveVersionImpl,
     max_age: Duration,
@@ -35,7 +35,7 @@ pub struct AliveMessage {
 }
 
 impl AliveMessage {
-    fn new(headers: Headers) -> SSDPResult<AliveMessage> {
+    fn new<T: HeaderMap>(headers: T) -> SSDPResult<AliveMessage> {
         let version = try!(AliveVersionImpl::new(&headers));
     
         let max_age = Duration::seconds(try!(first_max_age(&headers)) as i64);
@@ -96,7 +96,7 @@ impl Debug for AliveMessage {
 }
 
 /// Returns the query type for the target header field.
-fn generate_query(headers: &Headers) -> SSDPResult<QueryType> {
+fn generate_query<T: HeaderMap>(headers: &T) -> SSDPResult<QueryType> {
     let ref notify_field = try!(headers.get::<NT>().ok_or(
         SSDPError::MissingHeader(NT::header_name())
     )).0;
@@ -122,7 +122,7 @@ fn generate_query(headers: &Headers) -> SSDPResult<QueryType> {
 }
 
 /// Returns the uuid portion of the URN header as bytes.
-fn udn_as_bytes(headers: &Headers) -> SSDPResult<Vec<u8>> {
+fn udn_as_bytes<T: HeaderMap>(headers: &T) -> SSDPResult<Vec<u8>> {
     let ref uuid = try!(headers.get::<USN>().ok_or(
         SSDPError::MissingHeader(USN::header_name())
     )).0;
@@ -138,7 +138,7 @@ fn udn_as_bytes(headers: &Headers) -> SSDPResult<Vec<u8>> {
 }
 
 /// Returns the location header field as a Url.
-fn location_as_url(headers: &Headers) -> SSDPResult<Url> {
+fn location_as_url<T: HeaderMap>(headers: &T) -> SSDPResult<Url> {
     let location = try!(headers.get::<Location>().ok_or(
         SSDPError::MissingHeader(Location::header_name())
     ));
@@ -151,7 +151,7 @@ fn location_as_url(headers: &Headers) -> SSDPResult<Url> {
 }
 
 /// Returns first max-age directive found in the cache-control header.
-fn first_max_age(headers: &Headers) -> SSDPResult<u32> {
+fn first_max_age<T: HeaderMap>(headers: &T) -> SSDPResult<u32> {
     let ref cache_control_list = try!(headers.get::<CacheControl>().ok_or(
         SSDPError::MissingHeader(CacheControl::header_name())
     )).0;
