@@ -4,6 +4,8 @@
 //! layer in order to provide a cleaner interface for extending the underlying
 //! HTTP parsing library.
 
+use std::fmt::{Debug};
+
 use hyper::header::{Headers, Header, HeaderFormat};
 
 mod bootid;
@@ -29,7 +31,7 @@ pub use self::st::ST;
 pub use self::usn::USN;
 
 /// Trait for viewing the contents of a header structure.
-pub trait HeaderView {
+pub trait HeaderView: Debug {
     /// View a reference to a header field if it exists.
     fn view<H>(&self) -> Option<&H> where H: Header + HeaderFormat;
     
@@ -37,6 +39,25 @@ pub trait HeaderView {
     fn view_raw(&self, name: &str) -> Option<&[Vec<u8>]>;
 }
 
+impl<'a, T: ?Sized> HeaderView for &'a T where T: HeaderView {
+    fn view<H>(&self) -> Option<&H> where H: Header + HeaderFormat {
+        HeaderView::view::<H>(*self)
+    }
+    
+    fn view_raw(&self, name: &str) -> Option<&[Vec<u8>]> {
+        HeaderView::view_raw(*self, name)
+    }
+}
+
+impl<'a, T: ?Sized> HeaderView for &'a mut T where T: HeaderView {
+    fn view<H>(&self) -> Option<&H> where H: Header + HeaderFormat {
+        HeaderView::view::<H>(*self)
+    }
+    
+    fn view_raw(&self, name: &str) -> Option<&[Vec<u8>]> {
+        HeaderView::view_raw(*self, name)
+    }
+}
 
 impl HeaderView for Headers {
     fn view<H>(&self) -> Option<&H> where H: Header + HeaderFormat {
@@ -49,7 +70,7 @@ impl HeaderView for Headers {
 }
 
 #[cfg(test)]
-mod mock {
+pub mod mock {
     use std::any::{Any};
     use std::borrow::{ToOwned};
     use std::collections::{HashMap};
@@ -58,7 +79,8 @@ mod mock {
     
     use ssdp::header::{HeaderView};
 
-    struct MockHeaderMap {
+    #[derive(Debug)]
+    pub struct MockHeaderMap {
         map: HashMap<&'static str, (Box<Any>, [Vec<u8>; 1])>
     }
     

@@ -4,12 +4,15 @@ use {SSDPError};
 use super::notify::{NotifyMessage};
 use super::search::{SearchRequest, SearchResponse};*/
 
-//pub mod notify;
+pub mod notify;
+
+const MESSAGE_MULTICAST_HOST: &'static str = "239.255.255.250";
 
 const UPNP_10_VERSION_NAME: &'static str = "UPnP/1.0";
 const UPNP_11_VERSION_NAME: &'static str = "UPnP/1.1";
 const UPNP_20_VERSION_NAME: &'static str = "UPnP/2.0";
 
+// TODO: This is wrong, should generlize to all 2xx error codes
 const VALID_SEARCH_RESPONSE_CODE: u16 = 200;
 
 const NOTIFY_HEADER: &'static str = "NOTIFY";
