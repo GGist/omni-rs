@@ -3,13 +3,13 @@ use forum::device::{DeviceType};
 use version::{Version};
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub struct PrinterQuery {
-    query:    GenericQuery,
+pub struct PrinterQuery<'a> {
+    query:    GenericQuery<'a>,
     dev_type: DeviceType
 }
 
-impl PrinterQuery {
-    pub fn new(query: GenericQuery, dev_type: DeviceType) -> PrinterQuery {
+impl<'a> PrinterQuery<'a> {
+    pub fn new(query: GenericQuery<'a>, dev_type: DeviceType) -> PrinterQuery<'a> {
         PrinterQuery{ query: query, dev_type: dev_type }
     }
     
@@ -18,7 +18,7 @@ impl PrinterQuery {
     }
 }
 
-impl TypedQuery for PrinterQuery {
+impl<'a> TypedQuery for PrinterQuery<'a> {
     fn version(&self) -> Version {
         self.dev_type.version()
     }

@@ -31,7 +31,7 @@ pub use self::st::ST;
 pub use self::usn::USN;
 
 /// Trait for viewing the contents of a header structure.
-pub trait HeaderView: Debug {
+pub trait HeaderView: Debug + Clone {
     /// View a reference to a header field if it exists.
     fn view<H>(&self) -> Option<&H> where H: Header + HeaderFormat;
     
@@ -40,16 +40,6 @@ pub trait HeaderView: Debug {
 }
 
 impl<'a, T: ?Sized> HeaderView for &'a T where T: HeaderView {
-    fn view<H>(&self) -> Option<&H> where H: Header + HeaderFormat {
-        HeaderView::view::<H>(*self)
-    }
-    
-    fn view_raw(&self, name: &str) -> Option<&[Vec<u8>]> {
-        HeaderView::view_raw(*self, name)
-    }
-}
-
-impl<'a, T: ?Sized> HeaderView for &'a mut T where T: HeaderView {
     fn view<H>(&self) -> Option<&H> where H: Header + HeaderFormat {
         HeaderView::view::<H>(*self)
     }
@@ -79,14 +69,14 @@ pub mod mock {
     
     use ssdp::header::{HeaderView};
 
-    #[derive(Debug)]
-    pub struct MockHeaderMap {
+    #[derive(Debug, Clone)]
+    pub struct MockHeaderView {
         map: HashMap<&'static str, (Box<Any>, [Vec<u8>; 1])>
     }
     
-    impl MockHeaderMap {
-        pub fn new() -> MockHeaderMap {
-            MockHeaderMap{ map: HashMap::new() }
+    impl MockHeaderView {
+        pub fn new() -> MockHeaderView {
+            MockHeaderView{ map: HashMap::new() }
         }
         
         pub fn insert<H>(&mut self, value: &str) where H: Header + HeaderFormat {
@@ -101,7 +91,7 @@ pub mod mock {
         }
     }
     
-    impl HeaderView for MockHeaderMap {
+    impl HeaderView for MockHeaderView {
         fn view<H>(&self) -> Option<&H> where H: Header + HeaderFormat {
             match self.map.get(H::header_name()) {
                 Some(&(ref header, _)) => header.downcast_ref::<H>(),

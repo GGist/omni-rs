@@ -3,13 +3,13 @@ use forum::device::{DeviceType};
 use version::{Version};
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub struct SensorManagerQuery {
-    query:    GenericQuery,
+pub struct SensorManagerQuery<'a> {
+    query:    GenericQuery<'a>,
     dev_type: DeviceType
 }
 
-impl SensorManagerQuery {
-    pub fn new(query: GenericQuery, dev_type: DeviceType) -> SensorManagerQuery {
+impl<'a> SensorManagerQuery<'a> {
+    pub fn new(query: GenericQuery<'a>, dev_type: DeviceType) -> SensorManagerQuery<'a> {
         SensorManagerQuery{ query: query, dev_type: dev_type }
     }
     
@@ -18,7 +18,7 @@ impl SensorManagerQuery {
     }
 }
 
-impl TypedQuery for SensorManagerQuery {
+impl<'a> TypedQuery for SensorManagerQuery<'a> {
     fn version(&self) -> Version {
         self.dev_type.version()
     }

@@ -23,48 +23,48 @@ use version::{Version};
 ///
 /// All device query objects can be thought of as typed GenericQuery objects.
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub enum DeviceQuery {
+pub enum DeviceQuery<'a> {
     /// Device that provides basic information about itself.
-    BasicDevice(BasicDeviceQuery),
+    BasicDevice(BasicDeviceQuery<'a>),
     /// Device that provides an interface for accessing a MediaServer.
-    MediaServer(MediaServerQuery),
+    MediaServer(MediaServerQuery<'a>),
     /// Device that provides an interface for accessing a MediaRenderer.
-    MediaRenderer(MediaRendererQuery),
+    MediaRenderer(MediaRendererQuery<'a>),
     /// Device that provides an interface for maintenance.
-    ManagedDevice(ManagedDeviceQuery),
+    ManagedDevice(ManagedDeviceQuery<'a>),
     /// Device that provides an interface for adjusting blinds.
-    SolarBlind(SolarBlindQuery),
+    SolarBlind(SolarBlindQuery<'a>),
     /// Device that provides an interface for accessing a security camera.
-    SecurityCamera(SecurityCameraQuery),
+    SecurityCamera(SecurityCameraQuery<'a>),
     /// Device that provides an interface for controlling an HVAC system.
-    HVACSystem(HVACSystemQuery),
+    HVACSystem(HVACSystemQuery<'a>),
     /// Device that provides an interface for toggling a light.
-    BinaryLight(BinaryLightQuery),
+    BinaryLight(BinaryLightQuery<'a>),
     /// Device that provides an interface for toggling and dimming a light.
-    DimmableLight(DimmableLightQuery),
+    DimmableLight(DimmableLightQuery<'a>),
     /// Device that provides an interface for interfacing with a router.
-    InternetGateway(InternetGatewayQuery),
+    InternetGateway(InternetGatewayQuery<'a>),
     /// Device that provides an interface for interfacing with a wireless access point.
-    WirelessAP(WirelessAPQuery),
+    WirelessAP(WirelessAPQuery<'a>),
     /// Device that provides an interface for basic print services.
-    Printer(PrinterQuery),
+    Printer(PrinterQuery<'a>),
     /// Device that provides an interface for scanning services.
-    Scanner(ScannerQuery),
+    Scanner(ScannerQuery<'a>),
     /// Device that provides an interface for accessing sensors and actuators.
-    SensorManager(SensorManagerQuery),
+    SensorManager(SensorManagerQuery<'a>),
     /// Device that provides an interface for controlling a telephony client.
-    TelephonyClient(TelephonyClientQuery),
+    TelephonyClient(TelephonyClientQuery<'a>),
     /// Device that provides an interface for controlling a telephony server.
-    TelephonyServer(TelephonyServerQuery),
+    TelephonyServer(TelephonyServerQuery<'a>),
     /// Device that has not been implemented.
-    Unimplemented(GenericDeviceQuery),
+    Unimplemented(GenericDeviceQuery<'a>),
     ///// Device not included in the UPnP Forum layer.
     //Vendor(VendorDeviceQuery)
 }
 
-impl DeviceQuery {
+impl<'a> DeviceQuery<'a> {
     /// Create a new DeviceQuery from the given query and device type.
-    pub fn new(query: GenericQuery, dev_type: DeviceType) -> DeviceQuery {
+    pub fn new(query: GenericQuery<'a>, dev_type: DeviceType) -> DeviceQuery<'a> {
         match_device_query(query, dev_type)
     }
     
@@ -91,7 +91,7 @@ impl DeviceQuery {
     }
 }
 
-impl TypedQuery for DeviceQuery {
+impl<'a> TypedQuery for DeviceQuery<'a> {
     fn version(&self) -> Version {
         match *self {
             DeviceQuery::BasicDevice(ref n)     => n.version(),

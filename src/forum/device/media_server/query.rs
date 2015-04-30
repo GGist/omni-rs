@@ -3,13 +3,13 @@ use forum::device::{DeviceType};
 use version::{Version};
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub struct MediaServerQuery {
-    query:    GenericQuery,
+pub struct MediaServerQuery<'a> {
+    query:    GenericQuery<'a>,
     dev_type: DeviceType
 }
 
-impl MediaServerQuery {
-    pub fn new(query: GenericQuery, dev_type: DeviceType) -> MediaServerQuery {
+impl<'a> MediaServerQuery<'a> {
+    pub fn new(query: GenericQuery<'a>, dev_type: DeviceType) -> MediaServerQuery<'a> {
         MediaServerQuery{ query: query, dev_type: dev_type }
     }
     
@@ -18,7 +18,7 @@ impl MediaServerQuery {
     }
 }
 
-impl TypedQuery for MediaServerQuery {
+impl<'a> TypedQuery for MediaServerQuery<'a> {
     fn version(&self) -> Version {
         self.dev_type.version()
     }

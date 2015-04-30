@@ -3,13 +3,13 @@ use forum::device::{DeviceType};
 use version::{Version};
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub struct MediaRendererQuery {
-    query:    GenericQuery,
+pub struct MediaRendererQuery<'a> {
+    query:    GenericQuery<'a>,
     dev_type: DeviceType
 }
 
-impl MediaRendererQuery {
-    pub fn new(query: GenericQuery, dev_type: DeviceType) -> MediaRendererQuery {
+impl<'a> MediaRendererQuery<'a> {
+    pub fn new(query: GenericQuery<'a>, dev_type: DeviceType) -> MediaRendererQuery<'a> {
         MediaRendererQuery{ query: query, dev_type: dev_type }
     }
     
@@ -18,7 +18,7 @@ impl MediaRendererQuery {
     }
 }
 
-impl TypedQuery for MediaRendererQuery {
+impl<'a> TypedQuery for MediaRendererQuery<'a> {
     fn version(&self) -> Version {
         self.dev_type.version()
     }

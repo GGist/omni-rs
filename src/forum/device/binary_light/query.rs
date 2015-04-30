@@ -3,13 +3,13 @@ use forum::device::{DeviceType};
 use version::{Version};
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub struct BinaryLightQuery {
-    query:    GenericQuery,
+pub struct BinaryLightQuery<'a> {
+    query:    GenericQuery<'a>,
     dev_type: DeviceType
 }
 
-impl BinaryLightQuery {
-    pub fn new(query: GenericQuery, dev_type: DeviceType) -> BinaryLightQuery {
+impl<'a> BinaryLightQuery<'a> {
+    pub fn new(query: GenericQuery<'a>, dev_type: DeviceType) -> BinaryLightQuery<'a> {
         BinaryLightQuery{ query: query, dev_type: dev_type }
     }
     
@@ -18,7 +18,7 @@ impl BinaryLightQuery {
     }
 }
 
-impl TypedQuery for BinaryLightQuery {
+impl<'a> TypedQuery for BinaryLightQuery<'a> {
     fn version(&self) -> Version {
         self.dev_type.version()
     }

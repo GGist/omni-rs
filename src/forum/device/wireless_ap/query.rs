@@ -3,13 +3,13 @@ use forum::device::{DeviceType};
 use version::{Version};
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub struct WirelessAPQuery {
-    query:    GenericQuery,
+pub struct WirelessAPQuery<'a> {
+    query:    GenericQuery<'a>,
     dev_type: DeviceType
 }
 
-impl WirelessAPQuery {
-    pub fn new(query: GenericQuery, dev_type: DeviceType) -> WirelessAPQuery {
+impl<'a> WirelessAPQuery<'a> {
+    pub fn new(query: GenericQuery<'a>, dev_type: DeviceType) -> WirelessAPQuery<'a> {
         WirelessAPQuery{ query: query, dev_type: dev_type }
     }
     
@@ -18,7 +18,7 @@ impl WirelessAPQuery {
     }
 }
 
-impl TypedQuery for WirelessAPQuery {
+impl<'a> TypedQuery for WirelessAPQuery<'a> {
     fn version(&self) -> Version {
         self.dev_type.version()
     }

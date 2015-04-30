@@ -3,13 +3,13 @@ use forum::device::{DeviceType};
 use version::{Version};
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TelephonyClientQuery {
-    query:    GenericQuery,
+pub struct TelephonyClientQuery<'a> {
+    query:    GenericQuery<'a>,
     dev_type: DeviceType
 }
 
-impl TelephonyClientQuery {
-    pub fn new(query: GenericQuery, dev_type: DeviceType) -> TelephonyClientQuery {
+impl<'a> TelephonyClientQuery<'a> {
+    pub fn new(query: GenericQuery<'a>, dev_type: DeviceType) -> TelephonyClientQuery<'a> {
         TelephonyClientQuery{ query: query, dev_type: dev_type }
     }
     
@@ -18,7 +18,7 @@ impl TelephonyClientQuery {
     }
 }
 
-impl TypedQuery for TelephonyClientQuery {
+impl<'a> TypedQuery for TelephonyClientQuery<'a> {
     fn version(&self) -> Version {
         self.dev_type.version()
     }

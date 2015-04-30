@@ -3,13 +3,13 @@ use forum::device::{DeviceType};
 use version::{Version};
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub struct SolarBlindQuery {
-    query:    GenericQuery,
+pub struct SolarBlindQuery<'a> {
+    query:    GenericQuery<'a>,
     dev_type: DeviceType
 }
 
-impl SolarBlindQuery {
-    pub fn new(query: GenericQuery, dev_type: DeviceType) -> SolarBlindQuery {
+impl<'a> SolarBlindQuery<'a> {
+    pub fn new(query: GenericQuery<'a>, dev_type: DeviceType) -> SolarBlindQuery<'a> {
         SolarBlindQuery{ query: query, dev_type: dev_type }
     }
     
@@ -18,7 +18,7 @@ impl SolarBlindQuery {
     }
 }
 
-impl TypedQuery for SolarBlindQuery {
+impl<'a> TypedQuery for SolarBlindQuery<'a> {
     fn version(&self) -> Version {
         self.dev_type.version()
     }

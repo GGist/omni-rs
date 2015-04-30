@@ -3,13 +3,13 @@ use forum::device::{DeviceType};
 use version::{Version};
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub struct InternetGatewayQuery {
-    query:    GenericQuery,
+pub struct InternetGatewayQuery<'a> {
+    query:    GenericQuery<'a>,
     dev_type: DeviceType
 }
 
-impl InternetGatewayQuery {
-    pub fn new(query: GenericQuery, dev_type: DeviceType) -> InternetGatewayQuery {
+impl<'a> InternetGatewayQuery<'a> {
+    pub fn new(query: GenericQuery<'a>, dev_type: DeviceType) -> InternetGatewayQuery<'a> {
         InternetGatewayQuery{ query: query, dev_type: dev_type }
     }
     
@@ -18,7 +18,7 @@ impl InternetGatewayQuery {
     }
 }
 
-impl TypedQuery for InternetGatewayQuery {
+impl<'a> TypedQuery for InternetGatewayQuery<'a> {
     fn version(&self) -> Version {
         self.dev_type.version()
     }

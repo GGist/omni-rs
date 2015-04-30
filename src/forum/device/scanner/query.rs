@@ -3,13 +3,13 @@ use forum::device::{DeviceType};
 use version::{Version};
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ScannerQuery {
-    query:    GenericQuery,
+pub struct ScannerQuery<'a> {
+    query:    GenericQuery<'a>,
     dev_type: DeviceType
 }
 
-impl ScannerQuery {
-    pub fn new(query: GenericQuery, dev_type: DeviceType) -> ScannerQuery {
+impl<'a> ScannerQuery<'a> {
+    pub fn new(query: GenericQuery<'a>, dev_type: DeviceType) -> ScannerQuery<'a> {
         ScannerQuery{ query: query, dev_type: dev_type }
     }
     
@@ -18,7 +18,7 @@ impl ScannerQuery {
     }
 }
 
-impl TypedQuery for ScannerQuery {
+impl<'a> TypedQuery for ScannerQuery<'a> {
     fn version(&self) -> Version {
         self.dev_type.version()
     }

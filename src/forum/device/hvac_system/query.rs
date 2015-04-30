@@ -3,13 +3,13 @@ use forum::device::{DeviceType};
 use version::{Version};
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub struct HVACSystemQuery {
-    query:    GenericQuery,
+pub struct HVACSystemQuery<'a> {
+    query:    GenericQuery<'a>,
     dev_type: DeviceType
 }
 
-impl HVACSystemQuery {
-    pub fn new(query: GenericQuery, dev_type: DeviceType) -> HVACSystemQuery {
+impl<'a> HVACSystemQuery<'a> {
+    pub fn new(query: GenericQuery<'a>, dev_type: DeviceType) -> HVACSystemQuery<'a> {
         HVACSystemQuery{ query: query, dev_type: dev_type }
     }
     
@@ -18,7 +18,7 @@ impl HVACSystemQuery {
     }
 }
 
-impl TypedQuery for HVACSystemQuery {
+impl<'a> TypedQuery for HVACSystemQuery<'a> {
     fn version(&self) -> Version {
         self.dev_type.version()
     }

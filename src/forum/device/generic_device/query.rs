@@ -7,13 +7,13 @@ use version::{Version};
 /// Different than GenericQuery in that a GenericDeviceQuery is partially typed,
 /// meaning that the advertised device type will still be checked when querying.
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub struct GenericDeviceQuery {
-    query:    GenericQuery,
+pub struct GenericDeviceQuery<'a> {
+    query:    GenericQuery<'a>,
     dev_type: DeviceType
 }
 
-impl GenericDeviceQuery {
-    pub fn new(query: GenericQuery, dev_type: DeviceType) -> GenericDeviceQuery {
+impl<'a> GenericDeviceQuery<'a> {
+    pub fn new(query: GenericQuery<'a>, dev_type: DeviceType) -> GenericDeviceQuery<'a> {
         GenericDeviceQuery{ query: query, dev_type: dev_type }
     }
     
@@ -22,7 +22,7 @@ impl GenericDeviceQuery {
     }
 }
 
-impl TypedQuery for GenericDeviceQuery {
+impl<'a> TypedQuery for GenericDeviceQuery<'a> {
     fn version(&self) -> Version {
         self.dev_type.version()
     }

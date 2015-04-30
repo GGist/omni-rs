@@ -1,15 +1,13 @@
 use std::error::{Error};
-use std::fmt::{self, Debug, Display, Formatter};
-use std::str;
+use std::fmt::{self, Debug, Formatter};
 
-use hyper::header::{Location, Server, CacheDirective, CacheControl, Header, Host};
+use hyper::header::{Location, Server, CacheDirective, CacheControl, Host, 
+                    Headers, Header, HeaderFormat};
 use time::{Duration, PreciseTime};
 use url::{Url};
 
 use {SSDPError, SSDPResult};
 use forum::{GenericQuery, QueryType, TargetType};
-use forum::device::{DeviceQuery};
-//use forum::service::{ServiceQuery};
 use ssdp::{FieldPair};
 use ssdp::header::{HeaderView, SearchPort, SecureLocation, BootID, NT, USN, ConfigID};
 use ssdp::message::{self, MessageExt};
@@ -27,25 +25,22 @@ pub enum AliveVersion<'a> {
 
 /// Represents an announcement made by some UPnP enabled device.
 #[derive(Clone)]
-pub struct AliveMessage<T> where T: HeaderView {
-    headers: T,
-    created: PreciseTime,
-    version: AliveVersionImpl,
-    max_age: Duration,
-    query:   QueryType
+pub struct AliveMessage {
+    headers:  Headers,
+    created:  PreciseTime,
+    version:  AliveVersionImpl,
+    max_age:  Duration,
+    target:   TargetType,
+    location: Url
 }
 
-impl<T> AliveMessage<T> where T: HeaderView {
+impl AliveMessage {
     /// Create a new AliveMessage from the given header.
-    fn new(headers: T) -> SSDPResult<AliveMessage<T>> where T: HeaderView {
-        try!(check_multicast_host(&headers));
-    
-        let version = try!(AliveVersionImpl::new(&headers));
-        let max_age = Duration::seconds(try!(first_max_age(&headers)) as i64);
-        let query = try!(generate_query(&headers));
+    fn new(headers: Headers) -> SSDPResult<AliveMessage> {
+        let (version, duration, url, target) = try!(alive_pieces(&headers));
         
         Ok(AliveMessage{ headers: headers, created: PreciseTime::now(),
-            version: version, max_age: max_age, query: query })
+            version: version, max_age: duration, target: target, location: url })
     }
     
     /// Returns whether or not the cache control set by the sender has expired.
@@ -75,12 +70,13 @@ impl<T> AliveMessage<T> where T: HeaderView {
     }
     
     /// Returns the query object associated with this message.
-    pub fn query(&self) -> &QueryType {
-        &self.query
+    pub fn query<'a>(&'a self) -> QueryType<'a> {
+        panic!("TODO")
+        //&self.query
     }
 }
 
-impl<T> Debug for AliveMessage<T> where T: HeaderView {
+impl Debug for AliveMessage {
     fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
         try!(f.write_str("AliveMessage {"));
         
@@ -95,33 +91,116 @@ impl<T> Debug for AliveMessage<T> where T: HeaderView {
         try!(f.write_str(", max_age: "));
         try!(Debug::fmt(&self.max_age, f));
         
-        try!(f.write_str(", query: "));
-        try!(Debug::fmt(&self.query, f));
+        try!(f.write_str(", target: "));
+        try!(Debug::fmt(&self.target, f));
+        
+         try!(f.write_str(", location: "));
+        try!(Debug::fmt(&self.location, f));
         
         f.write_str(" }")
     }
 }
 
-/// Returns an error if the host field does not match the standard multicast address.
-fn check_multicast_host<T>(headers: T) -> SSDPResult<()> where T: HeaderView {
-    let ref host_field = try!(headers.view::<Host>().ok_or(
-        SSDPError::MissingHeader(Host::header_name())
-    )).hostname[..];
+/// Delegate for the creation process of an alive message.
+fn alive_pieces<T>(headers: T) -> SSDPResult<(AliveVersionImpl, Duration, Url, TargetType)>
+    where T: HeaderView {
+    // Extract Required Headers
+    let ref host_name = try!(try_view_header::<T, Host>(&headers)).hostname;
+    let ref cache_control = try!(try_view_header::<T, CacheControl>(&headers)).0;
+    let ref location = try!(try_view_header::<T, Location>(&headers)).0;
+    let ref notify_type = try!(try_view_header::<T, NT>(&headers)).0;
+    let &USN(ref usn_uuid, ref usn_type) = try!(try_view_header::<T, USN>(&headers));
     
-    if *host_field != *message::MESSAGE_MULTICAST_HOST {
-        Err(SSDPError::InvalidHeader(Host::header_name(),
-            "Host Field Contains Wrong Multicast Address"))
-    } else { Ok(()) }
+    // Validate Portions Of Message
+    try!(check_multicast_host(&host_name[..]));
+    try!(check_nt_usn_rules(notify_type, usn_uuid, usn_type));
+    
+    // Create Alive Pieces
+    let version = try!(AliveVersionImpl::new(&headers));
+    let max_age = try!(first_max_age(&cache_control[..]));
+    let url = try!(location_as_url(&location[..]));
+    let target = try!(notify_as_target(notify_type));
+    
+    Ok((version, Duration::seconds(max_age as i64), url, target))
 }
 
-/// Returns first max-age directive found in the cache-control header.
-fn first_max_age<T>(headers: T) -> SSDPResult<u32> where T: HeaderView {
-    let ref cache_control_list = try!(headers.view::<CacheControl>().ok_or(
-        SSDPError::MissingHeader(CacheControl::header_name())
-    )).0;
+/// Attempts to get a reference to a header value H.
+/// Returns a reference to H or an error if it does not exist in headers.
+fn try_view_header<'a, T, H>(headers: &'a T) -> SSDPResult<&'a H>
+    where T: HeaderView, H: Header + HeaderFormat {
+    headers.view::<H>().ok_or(SSDPError::MissingHeader(H::header_name()))
+}
+
+/// Returns an error if the host field does not match the standard multicast address.
+fn check_multicast_host(host_name: &str) -> SSDPResult<()> {
+    if host_name != message::MESSAGE_MULTICAST_HOST {
+        Err(SSDPError::InvalidHeader(Host::header_name(),
+            "Host Field Contains Wrong Multicast Address"))
+    } else { 
+        Ok(()) 
+    }
+}
+
+/// Returns an error if the rules for the relationship between the NT and USN
+/// fields are not adhered to.
+fn check_nt_usn_rules(notify_type: &FieldPair, usn_uuid: &FieldPair,
+                      usn_type: &Option<FieldPair>) -> SSDPResult<()> {
+    // Verify That The First Portion Of USN Is A UUID
+    let uuid = match *usn_uuid {
+        FieldPair::UUID(ref n) => &n[..],
+        _ => return Err(SSDPError::InvalidHeader(USN::header_name(),
+                        "USN Field Does Not Start With A UUID"))
+    };
     
+    // Verify The Relationship Between NT And USN
+    match *notify_type {
+        FieldPair::UUID(ref n) => {
+            if uuid != &n[..] {
+                Err(SSDPError::InvalidHeader(NT::header_name(),
+                    "UUID Does Not Match UUID In USN Field"))
+            } else if usn_type.is_some() {
+                Err(SSDPError::InvalidHeader(USN::header_name(),
+                    "Second Field Should Be Empty When NT Contains UUID"))
+            } else { Ok(()) }
+        },
+        ref n => {
+            // Unwrap The Second Field Of USN And Match Against NT
+            if let Some(ref n) = *usn_type {
+                compare_nt_usn(notify_type, n)
+            } else {
+                Err(SSDPError::InvalidHeader(USN::header_name(),
+                    "Second Field Is Empty When It Should Contain NT"))
+            }
+        }
+    }
+}
+
+/// Apply rules to NT and second field of USN to check if they are both URN or
+/// UPnP variants, and if so, compare their values.
+/// Return an error if NT and second field of USN are not equal.
+fn compare_nt_usn(notify_type: &FieldPair, usn_type: &FieldPair) -> SSDPResult<()> {
+    match (notify_type, usn_type) {
+        (&FieldPair::URN(ref n), &FieldPair::URN(ref u)) => {
+            if n != u {
+                Err(SSDPError::InvalidHeader(NT::header_name(),
+                    "NT URN Value Does Not Match USN URN Value"))
+            } else { Ok(()) }
+        },
+        (&FieldPair::UPnP(ref n), &FieldPair::UPnP(ref u)) => {
+            if n != u {
+                Err(SSDPError::InvalidHeader(NT::header_name(),
+                    "NT UPnP Value Does Not Match USN UPnP Value"))
+            } else { Ok(()) }
+        },
+        _ => Err(SSDPError::InvalidHeader(NT::header_name(),
+                 "Either NT Is Unknown Or It Did Not Match Second Field Of USN"))
+    }
+}
+
+/// Returns the first max-age directive found in the list.
+fn first_max_age(directives: &[CacheDirective]) -> SSDPResult<u32> {
     // Return First Max-Age Directive Found, Ignore Duplicates
-    for i in cache_control_list {
+    for i in directives.iter() {
         if let &CacheDirective::MaxAge(n) = i {
             return Ok(n)
         }
@@ -131,42 +210,8 @@ fn first_max_age<T>(headers: T) -> SSDPResult<u32> where T: HeaderView {
         "No Max-Age Found"))
 }
 
-/// Returns the query type for the target header field.
-fn generate_query<T>(headers: T) -> SSDPResult<QueryType> where T: HeaderView {
-    let ref notify_field = try!(headers.view::<NT>().ok_or(
-        SSDPError::MissingHeader(NT::header_name())
-    ));
-    let ref usn_field = try!(headers.view::<USN>().ok_or(
-        SSDPError::MissingHeader(USN::header_name())
-    ));
-
-    let url = try!(location_as_url(&headers));
-    let udn = try!(try_extract_udn(&notify_field, &usn_field));
-    
-    let generic_query = GenericQuery::new(url, udn);
-    
-    match TargetType::new(&notify_field.0) {
-        Ok(TargetType::Root) => Ok(QueryType::Root(generic_query)),
-        Ok(TargetType::UUID) => Ok(QueryType::UUID(generic_query)),
-        Ok(TargetType::Device(n)) => {
-            let device_query = DeviceQuery::new(generic_query, n);
-            Ok(QueryType::Device(device_query))
-        },
-        Ok(TargetType::Service(n)) => {
-            panic!("Unimplemented ssdp::message::notify::alive::generate_query")
-            //let service_query = ServiceQuery::new(generic_query, n);
-            //Ok(QueryType::Service(service_query))
-        },
-        Err(e) => Err(SSDPError::Other(Box::new(e) as Box<Error>))
-    }
-}
-
-/// Returns the location header field as a Url.
-fn location_as_url<T>(headers: T) -> SSDPResult<Url> where T: HeaderView {
-    let location = try!(headers.view::<Location>().ok_or(
-        SSDPError::MissingHeader(Location::header_name())
-    ));
-    
+/// Returns the location as a str into a Url object.
+fn location_as_url(location: &str) -> SSDPResult<Url> {
     Url::parse(location).map_err(|e|
         SSDPError::InvalidHeader(
             Location::header_name(), "Could Not Parse Location As A Url"
@@ -174,74 +219,15 @@ fn location_as_url<T>(headers: T) -> SSDPResult<Url> where T: HeaderView {
     )
 }
 
-/// Try to extract a udn value from the given headers after first validating
-/// them against UPnP NT and USN field matching rules.
-fn try_extract_udn(notify_field: &NT, usn_field: &USN) -> SSDPResult<Vec<u8>> {
-    let usn_uuid = match usn_field.0 {
-        FieldPair::UUID(ref n) => &n[..],
-        _ => return Err(SSDPError::InvalidHeader(USN::header_name(),
-                        "UUID Not Found As First Field"))
-    };
-
-    // Process According To NT And USN Relationship Rules In The UPnP Standard.
-    // We Are Only Comparing Bytes Here Because The NT Will Be Validated When
-    // We Generate A TargetType, So Any Invalid NT Values Will Be Caught Later.
-    match notify_field.0 {
-        FieldPair::UUID(ref n) => {
-            try!(compare_usn_uuid(&n[..], usn_uuid));
-            // USN Header Should Have Empty Second Field When NT Is UUID
-            if usn_field.1.is_some() {
-                return Err(SSDPError::InvalidHeader(USN::header_name(),
-                    "Second Field In USN Header Is Present"))
-            }
-        },
-        FieldPair::UPnP(ref n) => try!(compare_usn_upnp(&n[..], &usn_field.1)),
-        FieldPair::URN(ref n)  => try!(compare_usn_urn(&n[..], &usn_field.1)),
-        FieldPair::Unknown(..) => return Err(SSDPError::InvalidHeader(NT::header_name(),
-                                             "Unknown Key Is Not A Valid Key"))
-    };
-    
-    // We Already Know That USN Is Of Type FieldPair::UUID
-    Ok(usn_field.0.to_string().into_bytes())
-}
-
-/// Compare the uuid bytes of the NT and USN fields.
-fn compare_usn_uuid(nt_bytes: &[u8], usn_bytes: &[u8]) -> SSDPResult<()> {
-    if nt_bytes != usn_bytes {
-        Err(SSDPError::InvalidHeader(USN::header_name(), 
-            "First Field Has A uuid That Does Not Match NT"))
-    } else { Ok(()) }
-}
-
-/// Compare the upnp bytes of the NT and USN fields.
-fn compare_usn_upnp(nt_bytes: &[u8], usn_field: &Option<FieldPair>) -> SSDPResult<()> {
-    match *usn_field {
-        Some(FieldPair::UPnP(ref n)) => {
-            if nt_bytes != &n[..] {
-                Err(SSDPError::InvalidHeader(USN::header_name(),
-                    "Second Field Has A Value That Does Not Match NT"))
-            } else { Ok(()) }
-        },
-        _ => Err(SSDPError::InvalidHeader(USN::header_name(),
-                 "Second Field Has A Key That Does Not Match NT"))
+/// Returns the NT field pair as a TargetType.
+fn notify_as_target(notify_type: &FieldPair) -> SSDPResult<TargetType> {
+    match TargetType::new(notify_type) {
+        Ok(n)  => Ok(n),
+        Err(e) => Err(SSDPError::Other(Box::new(e) as Box<Error>))
     }
 }
 
-/// Compare the urn bytes of the NT and USN fields.
-fn compare_usn_urn(nt_bytes: &[u8], usn_field: &Option<FieldPair>) -> SSDPResult<()> {
-    match *usn_field {
-        Some(FieldPair::URN(ref n)) => {
-            if nt_bytes != &n[..] {
-                Err(SSDPError::InvalidHeader(USN::header_name(),
-                    "Second Field Has A Value That Does Not Match NT"))
-            } else { Ok(()) }
-        },
-        _ => Err(SSDPError::InvalidHeader(USN::header_name(),
-                 "Second Field Has A Key That Does Not Match NT"))
-    }
-}
-
-impl<T> MessageExt for AliveMessage<T> where T: HeaderView {
+impl MessageExt for AliveMessage {
     fn check_header(&self, name: &str) -> Option<&[Vec<u8>]> {
         self.headers.view_raw(name)
     }
@@ -303,23 +289,18 @@ pub trait AliveExtV11 {
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct AliveExtV11Impl {
+struct AliveExtV11Impl {
     boot_id:   u32,
     config_id: u32,
     port:      Option<u16>
 }
 
 impl AliveExtV11Impl {
-    fn new<T>(header: T) -> SSDPResult<AliveExtV11Impl> where T: HeaderView {
-        let boot_id = try!(header.view::<BootID>().ok_or(
-            SSDPError::MissingHeader(BootID::header_name())
-        )).0;
+    fn new<T>(headers: T) -> SSDPResult<AliveExtV11Impl> where T: HeaderView {
+        let boot_id = try!(try_view_header::<T, BootID>(&headers)).0;
+        let config_id = try!(try_view_header::<T, ConfigID>(&headers)).0;
         
-        let config_id = try!(header.view::<ConfigID>().ok_or(
-            SSDPError::MissingHeader(ConfigID::header_name())
-        )).0;
-        
-        let port = header.view::<SearchPort>().map(|n| n.0);
+        let port = headers.view::<SearchPort>().map(|n| n.0);
         
         Ok(AliveExtV11Impl{ boot_id: boot_id, config_id: config_id, port: port })
     }
@@ -349,7 +330,7 @@ pub trait AliveExtV20: AliveExtV11 {
 }
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub struct AliveExtV20Impl {
+struct AliveExtV20Impl {
     parent:     AliveExtV11Impl,
     secure_loc: Option<String>
 }
@@ -395,12 +376,12 @@ mod tests {
     use forum::{QueryType};
     use ssdp::header::{HeaderView, SearchPort, SecureLocation, BootID, NT, USN,
                        ConfigID, NTS};
-    use ssdp::header::mock::{MockHeaderMap};
+    use ssdp::header::mock::{MockHeaderView};
     use super::{AliveMessage, AliveVersion};
-    
+    /*
     #[test]
     fn positive_alive_message() {
-        let mut headers = MockHeaderMap::new();
+        let mut headers = MockHeaderView::new();
         
         headers.insert::<Host>("239.255.255.250:1900");
         headers.insert::<CacheControl>("max-age=1800");
@@ -413,5 +394,5 @@ mod tests {
         let message = AliveMessage::new(headers).unwrap();
 
         // TODO: NOT FINISHED WITH THIS TEST YET
-    }
+    }*/
 }

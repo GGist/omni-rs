@@ -3,13 +3,13 @@ use forum::device::{DeviceType};
 use version::{Version};
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub struct SecurityCameraQuery {
-    query:    GenericQuery,
+pub struct SecurityCameraQuery<'a> {
+    query:    GenericQuery<'a>,
     dev_type: DeviceType
 }
 
-impl SecurityCameraQuery {
-    pub fn new(query: GenericQuery, dev_type: DeviceType) -> SecurityCameraQuery {
+impl<'a> SecurityCameraQuery<'a> {
+    pub fn new(query: GenericQuery<'a>, dev_type: DeviceType) -> SecurityCameraQuery<'a> {
         SecurityCameraQuery{ query: query, dev_type: dev_type }
     }
     
@@ -18,7 +18,7 @@ impl SecurityCameraQuery {
     }
 }
 
-impl TypedQuery for SecurityCameraQuery {
+impl<'a> TypedQuery for SecurityCameraQuery<'a> {
     fn version(&self) -> Version {
         self.dev_type.version()
     }

@@ -3,13 +3,13 @@ use forum::device::{DeviceType};
 use version::{Version};
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ManagedDeviceQuery {
-    query:    GenericQuery,
+pub struct ManagedDeviceQuery<'a> {
+    query:    GenericQuery<'a>,
     dev_type: DeviceType
 }
 
-impl ManagedDeviceQuery {
-    pub fn new(query: GenericQuery, dev_type: DeviceType) -> ManagedDeviceQuery {
+impl<'a> ManagedDeviceQuery<'a> {
+    pub fn new(query: GenericQuery<'a>, dev_type: DeviceType) -> ManagedDeviceQuery<'a> {
         ManagedDeviceQuery{ query: query, dev_type: dev_type }
     }
     
@@ -18,7 +18,7 @@ impl ManagedDeviceQuery {
     }
 }
 
-impl TypedQuery for ManagedDeviceQuery {
+impl<'a> TypedQuery for ManagedDeviceQuery<'a> {
     fn version(&self) -> Version {
         self.dev_type.version()
     }
