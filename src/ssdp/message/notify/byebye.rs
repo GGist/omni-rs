@@ -14,6 +14,18 @@ use ssdp::{FieldPair};
 use ssdp::header::{HeaderView, SearchPort, SecureLocation, BootID, NT, USN, ConfigID};
 use ssdp::message::{self, MessageExt};
 
+/// Represents ByeByeMessage versions pertaining to different UPnP versions.
+///
+/// Since ByeByeMessage versions are inferred, the version presented here may
+/// be less than or equal to the actual UPnP version in use.
+#[derive(Copy, Clone)]
+pub enum ByeByeVersion<'a> {
+    /// UPnP Version 1.0.
+    V10,
+    /// UPnP Version 1.1.
+    V11(&'a ByeByeExtV11)
+}
+
 /// Represents a message signifying that a device is gracefully shutting down.
 #[derive(Debug, Clone)]
 pub struct ByeByeMessage {
@@ -33,6 +45,25 @@ impl ByeByeMessage {
     }
     
     
+}
+
+fn byebye_pieces<T>(headers: T) -> SSDPResult<()> where T: HeaderView {
+    // Extract Required Headers
+    let ref host_name = try!(try_view_header::<T, Host>(&headers)).hostname;
+    let ref notify_type = try!(try_view_header::<T, NT>(&headers)).0;
+    let &USN(ref usn_uuid, ref usn_type) = try!(try_view_header::<T, USN>(&headers));
+    
+    // Validate Portions Of Message
+    try!(check_multicast_host(&host_name[..]));
+    try!(check_nt_usn_rules(notify_type, usn_uuid, usn_type));
+    
+    // Create Alive Pieces
+    let version = try!(AliveVersionImpl::new(&headers));
+    let max_age = try!(first_max_age(&cache_control[..]));
+    let url = try!(location_as_url(&location[..]));
+    let target = try!(notify_as_target(notify_type));
+    
+    Ok((version, Duration::seconds(max_age as i64), url, target))
 }
 
 /// Returns first max-age directive found in the cache-control header.

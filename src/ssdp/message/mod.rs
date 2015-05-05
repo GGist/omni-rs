@@ -24,6 +24,9 @@ pub trait MessageExt {
     /// name and returns all field-values that match that name or none.
     fn check_header(&self, name: &str) -> Option<&[Vec<u8>]>;
 }
+
+
+
 /*
 /// Enumerates the types of SSDP messages.
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]

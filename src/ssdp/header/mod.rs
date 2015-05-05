@@ -63,13 +63,14 @@ impl HeaderView for Headers {
 pub mod mock {
     use std::any::{Any};
     use std::borrow::{ToOwned};
+    use std::clone::{Clone};
     use std::collections::{HashMap};
     
     use hyper::header::{Header, HeaderFormat};
     
     use ssdp::header::{HeaderView};
 
-    #[derive(Debug, Clone)]
+    #[derive(Debug)]
     pub struct MockHeaderView {
         map: HashMap<&'static str, (Box<Any>, [Vec<u8>; 1])>
     }
@@ -88,6 +89,12 @@ pub mod mock {
             };
             
             self.map.insert(H::header_name(), (Box::new(header), header_bytes));
+        }
+    }
+    
+    impl Clone for MockHeaderView {
+        fn clone(&self) -> MockHeaderView {
+            panic!("Can Not Clone A MockHeaderView")
         }
     }
     

@@ -43,24 +43,28 @@ impl AliveMessage {
             version: version, max_age: duration, target: target, location: url })
     }
     
-    /// Returns whether or not the cache control set by the sender has expired.
+    /// Whether or not the cache control for this message has expired.
     pub fn is_expired(&self) -> bool {
         self.created.to(PreciseTime::now()) > self.max_age
     }
     
-    /// Returns the max-age directive attached to the message.
+    /// Maximum time for which this alive message is valid unless a shutdown
+    /// (ByeByeMessage) is received prior.
+    ///
+    /// This is the initial duration sent, not the duration left (use is_expired).
     pub fn max_age(&self) -> Duration {
         self.max_age
     }
     
-    /// Returns the Server header field containing environment information.
+    /// Contains environment information from which the message originated.
+    /// Message will be in the form "OS/version UPnP/version product/version".
     pub fn server_info(&self) -> &str {
         // We Processed The Server Header Field When Looking At The Message
         // Version. We Can Therefore Safely Unwrap It Out Of The Header.
         &self.headers.view::<Server>().unwrap().0[..]
     }
     
-    /// Returns UPnP version information for this specific message.
+    /// UPnP version information containing additional fields for clients to utilize.
     pub fn version<'a>(&'a self) -> AliveVersion<'a> {
         match self.version {
             AliveVersionImpl::V10 => AliveVersion::V10,
@@ -69,8 +73,10 @@ impl AliveMessage {
         }
     }
     
-    /// Returns the query object associated with this message.
+    /// Query object associated with this message for obtaining a remote object
+    /// that can be used to invoke remote procedure calls on the device.
     pub fn query<'a>(&'a self) -> QueryType<'a> {
+        //let udn = 
         panic!("TODO")
         //&self.query
     }
@@ -244,9 +250,7 @@ enum AliveVersionImpl {
 impl AliveVersionImpl {
     /// Create a new AliveVersionImpl object.
     fn new<T>(headers: T) -> SSDPResult<AliveVersionImpl> where T: HeaderView {
-        let server = try!(headers.view::<Server>().ok_or(
-            SSDPError::MissingHeader(Server::header_name())
-        ));
+        let server = try!(try_view_header::<T, Server>(&headers));
         
         // TODO: Change this so that just the UPnP/ is matched and gather the version
         // number to convert to some enum like UPnPVersion::1.0, etc.

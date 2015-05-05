@@ -1,5 +1,4 @@
 use std::fmt::{Formatter, Result};
-use std::num::{FromStrRadix};
 
 use hyper::header::{HeaderFormat, Header};
 
